@@ -8,17 +8,15 @@ Anonymous-first question board with teacher workflow, doubt sessions, lightweigh
 Students / Teachers
        │
        ▼
- Next.js App Router (Vercel)
+ Next.js App Router
    ├── UI routes (/ , /ask, /q/[id], /sessions, /poll/[id], /teacher)
    ├── REST-ish JSON APIs (/api/...)
    └── Cron-triggered cleanup (/api/cron/cleanup)
 
-Persistence (single document → avoids relational DB)
-   ├── Local dev: `data/store.json` on disk
-   └── Production: Vercel Blob @ pathname `confidence-ladder/store.json` when `BLOB_READ_WRITE_TOKEN` is set
-```
+Persistence (single JSON file — no blob/database SDK)
+   └── Default: `data/store.json` next to the app (override with env `STORE_JSON_PATH`)
 
-Why Blob on Vercel: serverless functions do **not** have a writable persistent filesystem; Git-backed JSON is read-only at runtime. One JSON blob keeps costs minimal (Blob free tier) and stays compatible with your “JSON file” mental model.
+Serverless note: platforms like Netlify/Vercel lambdas often **cannot persist** this file across requests/deploys. Run **`npm run start`** (or Docker) on a host with a **writable disk** or mounted volume for production.
 
 ## File layout
 
@@ -137,16 +135,17 @@ Teacher drawer                     Floating Assistant (all pages)
 2. **Day 3**: Teacher secret routes + answers + live flags + similarity counts.
 3. **Day 4**: Sessions + polls + retention cron branch logic locally.
 4. **Day 5**: Participation ladder + nudge + floating assistant + `/api/chat`.
-5. **Day 6**: Deploy Vercel Blob persistence + cron secret wiring + smoke QA mobile.
+5. **Day 6**: Deploy to a Node host with persistent disk + cron secret wiring + smoke QA mobile.
 6. **Week 2 (nice-to-have)**: Teacher UX polish (pick question from board without copying IDs), rate limiting headers, optimistic concurrency on Blob uploads (`ifMatch`).
 
-## Deploy on Vercel
+## Deploy (persistent JSON file)
 
-1. Push this repo to GitHub/GitLab and **Import** in Vercel.
-2. **Environment variables**: copy `.env.example` → Production (`TEACHER_SECRET`, `DATA_SECRET`, `CRON_SECRET`, optionally `OPENAI_API_KEY`).
-3. **Blob**: Storage → Blob → create store → attach env var `BLOB_READ_WRITE_TOKEN` to project (required for persistent prod writes).
-4. **Cron**: `vercel.json` schedules `/api/cron/cleanup` daily; set **Cron Jobs secret** to equal `CRON_SECRET`.
-5. `npm run build` passes CI gate (`npm install`, then deploy).
+Use any Node host where **`data/store.json` stays writable** (VPS, Railway/Fly/Render with disk, Docker volume). Flow:
+
+1. `npm install` → `npm run build` → `npm run start` (set `PORT` if needed).
+2. **Environment variables**: `.env.example` (`TEACHER_SECRET`, `DATA_SECRET`, `CRON_SECRET`, optional OpenAI).
+3. Optionally **`STORE_JSON_PATH`** if you must put the file somewhere else (e.g. `/tmp/...` on restrictive serverless — data may not survive restarts).
+4. **Cron**: hit `GET /api/cron/cleanup` with header `Authorization: Bearer CRON_SECRET` on a schedule (see `vercel.json` for an example schedule if you use Vercel Cron).
 
 Local development:
 
@@ -156,7 +155,7 @@ npm install
 npm run dev
 ```
 
-Without Blob locally, data persists under `data/store.json`.
+Data persists under `data/store.json` by default.
 
 ---
 

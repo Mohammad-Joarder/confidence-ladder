@@ -22,8 +22,9 @@ export default async function PollsHubPage() {
       <div className="space-y-4">
         <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Polls</h1>
         <p className="rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-300">
-          Data could not be loaded (network or storage issue). Nothing was deleted — try again shortly,
-          or check server logs / Blob configuration if you deploy remotely.
+          Data could not be loaded (disk path not readable or server error). Nothing was deleted — try again shortly,
+          or check server logs and <code className="rounded bg-red-100 px-1 dark:bg-red-900">STORE_JSON_PATH</code> /
+          <code className="rounded bg-red-100 px-1 dark:bg-red-900">data/store.json</code>.
         </p>
         <Link href="/" className="text-sm text-slate-600 underline dark:text-slate-400">
           ← Back to board
