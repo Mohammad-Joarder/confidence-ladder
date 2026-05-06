@@ -1,0 +1,150 @@
+"use client";
+
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { getClientToken } from "@/lib/client-token";
+
+export default function AskPage() {
+  const router = useRouter();
+  const [title, setTitle] = useState("");
+  const [body, setBody] = useState("");
+  const [anonymous, setAnonymous] = useState(true);
+  const [authorDisplay, setAuthorDisplay] = useState("");
+  const [tags, setTags] = useState("");
+  const [useAi, setUseAi] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [preview, setPreview] = useState<string | null>(null);
+
+  async function improve() {
+    const res = await fetch("/api/ai/rewrite", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title, body }),
+    });
+    const d = await res.json();
+    if (d.improvedBody) setPreview(d.improvedBody);
+  }
+
+  async function submit() {
+    setBusy(true);
+    try {
+      const tagList = tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+      const res = await fetch("/api/questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          body,
+          anonymous,
+          authorDisplay: anonymous ? undefined : authorDisplay,
+          tags: tagList,
+          useAiImprovement: useAi,
+          clientToken: getClientToken(),
+        }),
+      });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error ?? "Failed");
+      router.push(`/q/${d.question.id}`);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Could not submit");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="space-y-8">
+      <div>
+        <h1 className="text-2xl font-semibold text-slate-900 dark:text-white">Ask a question</h1>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+          Defaults to anonymous — nothing tied to your name appears on the board.
+        </p>
+      </div>
+
+      <div className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+          Title
+          <input
+            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-base dark:border-slate-700 dark:bg-slate-950"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="One line summary"
+          />
+        </label>
+
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+          Details
+          <textarea
+            className="mt-1 min-h-[120px] w-full rounded-xl border border-slate-200 px-3 py-2 text-base dark:border-slate-700 dark:bg-slate-950"
+            value={body}
+            onChange={(e) => setBody(e.target.value)}
+            placeholder="Where did you get stuck?"
+          />
+        </label>
+
+        <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+          <input type="checkbox" checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)} />
+          Ask anonymously
+        </label>
+
+        {!anonymous && (
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+            Your name (shown on board)
+            <input
+              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-950"
+              value={authorDisplay}
+              onChange={(e) => setAuthorDisplay(e.target.value)}
+            />
+          </label>
+        )}
+
+        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+          Tags (comma separated)
+          <input
+            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-950"
+            value={tags}
+            onChange={(e) => setTags(e.target.value)}
+            placeholder="e.g. calculus, homework 4"
+          />
+        </label>
+
+        <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+          <input type="checkbox" checked={useAi} onChange={(e) => setUseAi(e.target.checked)} />
+          AI-assisted clarity pass on submit (OpenAI when configured; heuristic fallback otherwise)
+        </label>
+
+        {preview && (
+          <div className="rounded-xl bg-slate-50 p-3 text-sm dark:bg-slate-800">
+            <p className="font-medium text-slate-800 dark:text-slate-100">Suggested clearer wording</p>
+            <p className="mt-2 whitespace-pre-wrap text-slate-700 dark:text-slate-300">{preview}</p>
+          </div>
+        )}
+
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold dark:border-slate-600"
+            onClick={() => void improve()}
+          >
+            Preview rewrite
+          </button>
+          <button
+            type="button"
+            disabled={busy || !title.trim() || !body.trim()}
+            className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+            onClick={() => void submit()}
+          >
+            {busy ? "Posting…" : "Post question"}
+          </button>
+          <Link href="/" className="rounded-xl px-4 py-2 text-sm text-slate-600 underline dark:text-slate-400">
+            Cancel
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}

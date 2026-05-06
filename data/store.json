@@ -1,0 +1,93 @@
+{
+  "questions": [
+    {
+      "id": "998b392c-49e5-416f-837e-34e5521ac805",
+      "title": "What is micro organism?",
+      "body": "Give me the details",
+      "anonymous": true,
+      "tags": [
+        "Science HW"
+      ],
+      "createdAt": "2026-05-06T14:17:59.248Z",
+      "updatedAt": "2026-05-06T14:17:59.248Z",
+      "upvotes": 0,
+      "upvoteFingerprints": [],
+      "status": "pending",
+      "markedLiveClarification": false,
+      "aiImprovedBody": "Give me the details\n\nCould you share which topic or example this relates to, and where you got stuck?"
+    }
+  ],
+  "answers": [],
+  "sessions": [
+    {
+      "id": "87c54b7e-4e88-47ea-a540-545268f3d997",
+      "topic": "Computer Science - chapter 5",
+      "startsAt": "2026-05-09T01:30:00.000Z",
+      "createdAt": "2026-05-06T14:14:43.934Z"
+    }
+  ],
+  "polls": [
+    {
+      "id": "aa7f8dfd-725c-4e48-9967-89b29efd3aa4",
+      "prompt": "Did this explanation click?",
+      "options": [
+        {
+          "id": "0d182269-1716-4ac1-8895-d7a02569ab9d",
+          "label": "Yes",
+          "count": 1
+        },
+        {
+          "id": "d4f59fbb-8226-4c5c-8284-6ef3141df999",
+          "label": "Not yet",
+          "count": 0
+        }
+      ],
+      "createdAt": "2026-05-06T14:02:32.579Z",
+      "voterFingerprints": [
+        "f34510986796b5982f88f3b4f04e2cf2"
+      ]
+    }
+  ],
+  "participation": {
+    "57388fc9e81bd9d53598e81d0fe36300": {
+      "stage": "anonymous",
+      "pageViews": 5,
+      "questionsAsked": 1,
+      "upvotesGiven": 0,
+      "pollVotes": 1,
+      "updatedAt": "2026-05-06T14:17:59.261Z",
+      "recentEvents": [
+        {
+          "kind": "question_asked",
+          "at": "2026-05-06T14:17:59.261Z"
+        },
+        {
+          "kind": "poll_vote",
+          "at": "2026-05-06T14:09:12.579Z"
+        },
+        {
+          "kind": "page_view",
+          "at": "2026-05-06T14:08:50.777Z"
+        },
+        {
+          "kind": "page_view",
+          "at": "2026-05-06T14:03:53.882Z"
+        },
+        {
+          "kind": "page_view",
+          "at": "2026-05-06T14:03:22.507Z"
+        },
+        {
+          "kind": "page_view",
+          "at": "2026-05-06T14:03:15.136Z"
+        },
+        {
+          "kind": "page_view",
+          "at": "2026-05-06T14:02:16.351Z"
+        }
+      ],
+      "lastViewAt": "2026-05-06T14:08:50.777Z",
+      "lastNudgeAt": "2026-05-06T14:03:33.930Z"
+    }
+  }
+}
