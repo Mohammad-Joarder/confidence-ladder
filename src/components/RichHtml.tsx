@@ -7,7 +7,16 @@ type Props = {
 
 /** Renders sanitized HTML from stored rich text (questions, answers). */
 export function RichHtml({ html, className }: Props) {
-  const safe = sanitizeRichHtml(html);
+  let safe = "";
+  try {
+    safe = sanitizeRichHtml(html);
+  } catch {
+    return (
+      <p className={`text-slate-500 italic ${className ?? ""}`}>
+        (Could not render formatted content safely.)
+      </p>
+    );
+  }
   if (!safe) return null;
   return (
     <div

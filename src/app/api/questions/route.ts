@@ -31,7 +31,16 @@ export async function POST(req: Request) {
 
     const title = (body.title ?? "").trim();
     const rawBody = (body.body ?? "").trim();
-    const text = sanitizeRichHtml(rawBody);
+    let text: string;
+    try {
+      text = sanitizeRichHtml(rawBody);
+    } catch (err) {
+      console.error("[questions POST] sanitize failed", err);
+      return NextResponse.json(
+        { error: "Could not process rich text. Try less formatting or a smaller pasted image." },
+        { status: 400 },
+      );
+    }
     if (!title || isRichTextEmpty(text)) {
       return NextResponse.json({ error: "Title and question text are required." }, { status: 400 });
     }

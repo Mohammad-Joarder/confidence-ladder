@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { getClientToken } from "@/lib/client-token";
+import { readJsonResponse } from "@/lib/read-json-response";
 
 type Poll = {
   id: string;
@@ -46,7 +47,7 @@ export default function PollVotePage() {
 
     void fetch(`/api/polls/${encodeURIComponent(id)}`, { cache: "no-store" })
       .then(async (res) => {
-        const d = (await res.json()) as { poll?: Poll; error?: string };
+        const d = await readJsonResponse<{ poll?: Poll; error?: string }>(res);
         if (cancelled) return;
         if (!res.ok || !d.poll) {
           setPoll(null);
@@ -80,11 +81,11 @@ export default function PollVotePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ optionId, clientToken: getClientToken() }),
       });
-      const d = (await res.json()) as {
+      const d = await readJsonResponse<{
         poll?: Poll;
         duplicate?: boolean;
         error?: string;
-      };
+      }>(res);
 
       if (d.poll) setPoll(d.poll);
 

@@ -7,6 +7,7 @@ import { RichTextEditor } from "@/components/RichTextEditor";
 import { SessionDatePicker } from "@/components/SessionDatePicker";
 import { StatusLegend } from "@/components/StatusLegend";
 import { isRichTextEmpty } from "@/lib/html-plain";
+import { readJsonResponse } from "@/lib/read-json-response";
 import {
   combineDateAndTimeToIso,
   formatLocalDateLabel,
@@ -98,7 +99,9 @@ export default function TeacherPage() {
   async function refreshQuestions() {
     try {
       const res = await fetch("/api/questions");
-      const d = await res.json();
+      const d = await readJsonResponse<{
+        questions?: Array<{ id: string; title: string; status: "pending" | "answered" }>;
+      }>(res);
       const list = (d.questions ?? []) as Array<{
         id: string;
         title: string;
@@ -119,7 +122,7 @@ export default function TeacherPage() {
   async function refreshPolls() {
     try {
       const res = await fetch("/api/polls", { cache: "no-store" });
-      const d = await res.json();
+      const d = await readJsonResponse<{ polls?: PollPublic[] }>(res);
       const list = Array.isArray(d.polls) ? (d.polls as PollPublic[]) : [];
       setTeacherPolls(list);
     } catch {
@@ -143,7 +146,7 @@ export default function TeacherPage() {
     setStored(sessionStorage.getItem(STORAGE_KEY));
 
     void fetch("/api/teacher-status")
-      .then((r) => r.json())
+      .then((r) => readJsonResponse<{ requiresSecret?: boolean }>(r))
       .then((d) => setRequiresSecret(Boolean(d.requiresSecret)))
       .catch(() => setRequiresSecret(true));
 
@@ -204,7 +207,9 @@ export default function TeacherPage() {
     let latestList: QuestionLite[] = questions;
     try {
       const res = await fetch("/api/questions", { cache: "no-store" });
-      const d = await res.json();
+      const d = await readJsonResponse<{
+        questions?: Array<{ id: string; title: string; status: "pending" | "answered" }>;
+      }>(res);
       latestList = ((d.questions ?? []) as QuestionLite[]).map((q) => ({
         id: q.id,
         title: q.title,
@@ -220,7 +225,7 @@ export default function TeacherPage() {
     if (looksLikeFullUuid(trimmed)) {
       const id = trimmed.toLowerCase();
       const res = await fetch(`/api/questions/${encodeURIComponent(id)}`, { cache: "no-store" });
-      const d = await res.json();
+      const d = await readJsonResponse<{ error?: string; question?: { title?: string } }>(res);
       if (!res.ok) {
         showNotice(d.error ?? "Question not found", "error");
         return;
@@ -273,7 +278,7 @@ export default function TeacherPage() {
       headers: headers(),
       body: JSON.stringify({ body: answerBody }),
     });
-    const d = await res.json();
+    const d = await readJsonResponse<{ error?: string }>(res);
     if (!res.ok) {
       showNotice(d.error ?? "Failed", "error");
       return;
@@ -303,7 +308,10 @@ export default function TeacherPage() {
       headers: headers(),
       body: JSON.stringify({ markedLiveClarification: live }),
     });
-    const d = await res.json();
+    const d = await readJsonResponse<{
+      error?: string;
+      question?: { markedLiveClarification?: boolean };
+    }>(res);
     if (!res.ok) {
       showNotice(d.error ?? "Failed", "error");
       return;
@@ -335,7 +343,7 @@ export default function TeacherPage() {
         meetingUrl: sessionUrl || undefined,
       }),
     });
-    const d = await res.json();
+    const d = await readJsonResponse<{ error?: string; session?: { id: string } }>(res);
     if (!res.ok) {
       showNotice(d.error ?? "Failed", "error");
       return;
@@ -366,12 +374,12 @@ export default function TeacherPage() {
         options: [{ label: "Yes" }, { label: "Not yet" }],
       }),
     });
-    const d = await res.json();
+    const d = await readJsonResponse<{ error?: string; poll?: PollPublic }>(res);
     if (!res.ok) {
       showNotice(d.error ?? "Failed", "error");
       return;
     }
-    const created = d.poll as PollPublic | undefined;
+    const created = d.poll;
     if (created?.id) {
       setLastCreatedPoll({ id: created.id, prompt: created.prompt });
     }

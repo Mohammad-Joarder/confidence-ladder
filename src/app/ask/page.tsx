@@ -6,6 +6,7 @@ import { useState } from "react";
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { getClientToken } from "@/lib/client-token";
 import { isRichTextEmpty } from "@/lib/html-plain";
+import { readJsonResponse } from "@/lib/read-json-response";
 
 export default function AskPage() {
   const router = useRouter();
@@ -35,9 +36,11 @@ export default function AskPage() {
           clientToken: getClientToken(),
         }),
       });
-      const d = await res.json();
+      const d = await readJsonResponse<{ error?: string; question?: { id: string } }>(res);
       if (!res.ok) throw new Error(d.error ?? "Failed");
-      router.push(`/q/${d.question.id}`);
+      const qid = d.question?.id;
+      if (!qid) throw new Error(d.error ?? "Missing question id in response.");
+      router.push(`/q/${qid}`);
     } catch (e) {
       alert(e instanceof Error ? e.message : "Could not submit");
     } finally {

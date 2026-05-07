@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getClientToken } from "@/lib/client-token";
+import { readJsonResponse } from "@/lib/read-json-response";
 import Link from "next/link";
 
 export function ChatAssistant() {
@@ -26,14 +27,14 @@ export function ChatAssistant() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ clientToken: token, kind: "page_view" }),
     })
-      .then((r) => r.json())
+      .then((r) => readJsonResponse<{ stage?: string }>(r))
       .then((d) => {
         setStage(d.stage ?? "");
       })
       .catch(() => {});
 
     void fetch(`/api/nudge?clientToken=${encodeURIComponent(token)}`)
-      .then((r) => r.json())
+      .then((r) => readJsonResponse<{ nudge?: unknown; message?: string }>(r))
       .then((d) => {
         if (d.nudge && d.message) setNudge(d.message);
       })
@@ -49,7 +50,7 @@ export function ChatAssistant() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ clientToken: token, kind: "set_nickname", nickname: nick }),
     });
-    const d = await res.json();
+    const d = await readJsonResponse<{ stage?: string }>(res);
     setStage(d.stage ?? "nickname");
     setNickname("");
     setMessages((m) => [...m, { role: "bot", text: `Saved nickname “${nick}”. Progress on the confidence ladder: ${d.stage}.` }]);
@@ -67,7 +68,7 @@ export function ChatAssistant() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: text }),
       });
-      const d = await res.json();
+      const d = await readJsonResponse<{ reply?: string; links?: { id: string; title: string }[] }>(res);
       let reply = d.reply as string;
       if (Array.isArray(d.links) && d.links.length) {
         reply += "\n\nSuggested threads:";

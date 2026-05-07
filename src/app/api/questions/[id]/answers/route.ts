@@ -14,7 +14,16 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   try {
     const body = (await req.json()) as { body?: string };
     const raw = (body.body ?? "").trim();
-    const text = sanitizeRichHtml(raw);
+    let text: string;
+    try {
+      text = sanitizeRichHtml(raw);
+    } catch (err) {
+      console.error("[answers POST] sanitize failed", err);
+      return NextResponse.json(
+        { error: "Could not process rich text. Try less formatting or a smaller pasted image." },
+        { status: 400 },
+      );
+    }
     if (isRichTextEmpty(text)) return NextResponse.json({ error: "Answer text required." }, { status: 400 });
 
     const now = new Date().toISOString();
