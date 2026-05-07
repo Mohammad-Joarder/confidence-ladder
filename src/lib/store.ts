@@ -1,14 +1,20 @@
 import { mkdir, readFile, rename, writeFile } from "fs/promises";
 import path from "path";
 import { unstable_noStore as noStore } from "next/cache";
-import type { AppData, Poll } from "./types";
+import type { AppData } from "./types";
 import { emptyStore } from "./types";
+import { normalizeAppData } from "./store-normalize";
+import { mutatePg, readPg, writePg } from "./pg-store";
 
 const TMP_FALLBACK = path.join("/tmp", "confidence-ladder-store.json");
 
+function usePostgres(): boolean {
+  return Boolean(process.env.DATABASE_URL?.trim());
+}
+
 /**
- * Resolve at request time (not module load) so Netlify env vars are visible.
- * Netlify/Vercel lambdas: read-only deploy dir — use /tmp unless STORE_JSON_PATH is set.
+ * Resolve at request time (not module load) so hosting env vars are visible.
+ * Netlify/Vercel lambdas without DATABASE_URL: read-only deploy dir — use /tmp unless STORE_JSON_PATH is set.
  */
 function getStorePath(): string {
   const envPath = process.env.STORE_JSON_PATH?.trim();
@@ -33,7 +39,7 @@ async function readLocal(): Promise<AppData> {
   try {
     const raw = await readFile(storePath, "utf8");
     const parsed = JSON.parse(raw) as AppData;
-    return normalize(parsed);
+    return normalizeAppData(parsed);
   } catch (e: unknown) {
     const code =
       typeof e === "object" && e !== null && "code" in e
@@ -48,7 +54,7 @@ async function readLocal(): Promise<AppData> {
       } catch (writeErr) {
         console.error("[store] create initial store failed", storePath, writeErr);
         throw new Error(
-          `STORE_WRITE_FAILED: Cannot write ${storePath}. On Netlify/Vercel use default /tmp path or set STORE_JSON_PATH.`,
+          `STORE_WRITE_FAILED: Cannot write ${storePath}. Set DATABASE_URL for persistent hosting (e.g. Neon), or use STORE_JSON_PATH / writable disk.`,
         );
       }
     }
@@ -67,47 +73,40 @@ async function writeLocal(data: AppData): Promise<void> {
   await rename(tmpPath, storePath);
 }
 
-function normalizePoll(p: Poll): Poll {
-  return {
-    ...p,
-    voterFingerprints: Array.isArray(p.voterFingerprints) ? p.voterFingerprints : [],
-    options: Array.isArray(p.options)
-      ? p.options.map((o) => ({
-          id: String(o.id ?? ""),
-          label: String(o.label ?? ""),
-          count: typeof o.count === "number" && Number.isFinite(o.count) ? o.count : 0,
-        }))
-      : [],
-  };
+async function readUnderlying(): Promise<AppData> {
+  if (usePostgres()) {
+    return readPg();
+  }
+  return readLocal();
 }
 
-function normalize(raw: AppData): AppData {
-  return {
-    questions: raw.questions ?? [],
-    answers: raw.answers ?? [],
-    sessions: raw.sessions ?? [],
-    polls: (raw.polls ?? []).map((p) => normalizePoll(p as Poll)),
-    participation: raw.participation ?? {},
-  };
+async function writeUnderlying(data: AppData): Promise<void> {
+  if (usePostgres()) {
+    await writePg(data);
+    return;
+  }
+  await writeLocal(data);
 }
 
 export async function loadStore(): Promise<AppData> {
   noStore();
-  return readLocal();
+  return readUnderlying();
 }
 
 export async function saveStore(data: AppData): Promise<void> {
-  await writeLocal(data);
+  await writeUnderlying(data);
 }
 
 let mutationQueue: Promise<unknown> = Promise.resolve();
 
 /**
  * Serialize mutations to avoid lost updates under concurrent requests.
- * This protects consistency for low-scale single-instance deployments.
  */
 export async function mutateStore(fn: (draft: AppData) => void): Promise<AppData> {
   const run = async (): Promise<AppData> => {
+    if (usePostgres()) {
+      return mutatePg(fn);
+    }
     const current = await readLocal();
     fn(current);
     await writeLocal(current);

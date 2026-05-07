@@ -15,12 +15,10 @@ export default async function BoardPage() {
           Can&apos;t load the board
         </h1>
         <p className="text-sm text-red-800 dark:text-red-300">
-          Data is read from a JSON file on the server (<code className="rounded bg-red-100 px-1 dark:bg-red-900">data/store.json</code>{" "}
-          by default, or <code className="rounded bg-red-100 px-1 dark:bg-red-900">STORE_JSON_PATH</code>). If this is
-          serverless hosting without a writable disk, run the app on a VPS / Docker / Node host with a persistent volume,
-          or point <code className="rounded bg-red-100 px-1 dark:bg-red-900">STORE_JSON_PATH</code> at a writable path (e.g.{" "}
-          <code className="rounded bg-red-100 px-1 dark:bg-red-900">/tmp/store.json</code> — data may reset when the instance
-          restarts).
+          For Vercel and other serverless hosts, set <code className="rounded bg-red-100 px-1 dark:bg-red-900">DATABASE_URL</code>{" "}
+          (Postgres, e.g. Neon free tier) so data persists. Locally, data defaults to{" "}
+          <code className="rounded bg-red-100 px-1 dark:bg-red-900">data/store.json</code> or{" "}
+          <code className="rounded bg-red-100 px-1 dark:bg-red-900">STORE_JSON_PATH</code>.
         </p>
       </div>
     );

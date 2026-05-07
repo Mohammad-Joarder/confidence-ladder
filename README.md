@@ -13,12 +13,13 @@ Students / Teachers
    ├── REST-ish JSON APIs (/api/...)
    └── Cron-triggered cleanup (/api/cron/cleanup)
 
-Persistence (single JSON file — no blob/database SDK)
-  └── Default: `data/store.json` next to the app (override with env `STORE_JSON_PATH`)
-      Writes are serialized and saved atomically (`.tmp` -> rename) for better integrity at low scale.
+Persistence
+  ├── **`DATABASE_URL` (Postgres)** — used automatically when set (Vercel + Neon/Supabase, etc.).
+  │    Single JSONB row (`quietboard_store`) keeps questions/answers/polls/sessions/participation.
+  └── **JSON file** when `DATABASE_URL` is unset: `data/store.json` or `STORE_JSON_PATH`
+       with serialized mutations + atomic writes for low-scale integrity.
 
-Serverless note: Netlify/Vercel lambdas often **cannot persist** this file across requests/deploys.
-For production, run **`npm run start`** (or Docker) on a host with a **writable persistent disk**.
+Without Postgres on serverless hosts, file-based storage is ephemeral — **set `DATABASE_URL`** for persistent boards on Vercel.
 
 ## File layout
 
@@ -44,6 +45,7 @@ src/
   lib/
     types.ts, store.ts, display.ts
     similarity.ts, participation.ts
+    pg-store.ts, store-normalize.ts
     retention.ts, teacher-auth.ts, crypto-util.ts
 data/store.json              # Dev seed / git-safe empty schema
 vercel.json                  # Cron schedule
@@ -119,7 +121,7 @@ Board                Ask                         Question detail
 │ [card] pending  │  │ Body  [textarea]       │  │ Title                 │
 │ tags · ↑3 · sim │  │ [x] anonymous          │  │ Body                  │
 └─────────────────┘  │ Tags …                 │  │ [Upvote]              │
-                     │ [ Preview ] [ Post ]   │  │ Answers list…          │
+                     │ [ Post ]               │  │ Answers list…          │
                      └────────────────────────┘  │ Similar threads        │
                                                  └────────────────────────┘
 Teacher drawer                     Floating Assistant (all pages)
@@ -140,18 +142,29 @@ Teacher drawer                     Floating Assistant (all pages)
 
 ## Deploy (easy + consistent for <=30 users)
 
-Recommended: **Render Web Service + persistent disk**.
+### Vercel + Neon (persistent data, free tiers)
+
+1. Create a **Neon** project: [neon.tech](https://neon.tech) → new database → copy **connection string** (include `sslmode=require` if offered).
+2. Vercel → your project → **Settings → Environment Variables** → add `DATABASE_URL` = Neon URL (Production + Preview if needed).
+3. Also add `TEACHER_SECRET`, `DATA_SECRET`, `CRON_SECRET` from `.env.example`.
+4. Redeploy. First request creates table `quietboard_store` automatically.
+
+Cron cleanup stays wired via `vercel.json`; ensure Cron Secret matches `CRON_SECRET` if using Vercel Cron auth.
+
+### Render Web Service + disk (JSON file mode only)
+
+Use when you **do not** set `DATABASE_URL` and prefer the JSON file:
 
 1. Create a Render Web Service from this repo.
 2. Set root directory to `confidence-ladder`.
 3. Build command: `npm install && npm run build`
 4. Start command: `npm run start`
 5. Add a persistent disk (example mount path: `/var/data/confidence-ladder`).
-6. Set environment variable `STORE_JSON_PATH=/var/data/confidence-ladder/store.json`.
-7. Add environment variables from `.env.example` (`TEACHER_SECRET`, `DATA_SECRET`, `CRON_SECRET`).
-8. Set a Render cron job to call `GET /api/cron/cleanup` daily with header `Authorization: Bearer <CRON_SECRET>`.
+6. Set `STORE_JSON_PATH=/var/data/confidence-ladder/store.json`.
+7. Environment variables from `.env.example` (no `DATABASE_URL`).
+8. Render cron calling `GET /api/cron/cleanup` with `Authorization: Bearer <CRON_SECRET>`.
 
-Alternative hosts: Railway, Fly.io, or any VPS/container host with a mounted writable volume.
+Alternative hosts: Railway, Fly.io, or any VPS with Postgres (`DATABASE_URL`) or a writable volume (`STORE_JSON_PATH`).
 
 Local development:
 
@@ -161,7 +174,15 @@ npm install
 npm run dev
 ```
 
-Data persists under `data/store.json` by default.
+Without `DATABASE_URL`, data persists under `data/store.json`. With `DATABASE_URL`, Postgres holds all board state.
+
+---
+
+### Persistence vs browser
+
+Questions and answers live on the **server** (Postgres or file). Closing the browser does not delete them.
+
+Anonymous ladder/participation is keyed per-browser (`localStorage`); a **new browser** looks like a new visitor unless users reuse the same device/profile — that is intentional for privacy.
 
 ---
 
