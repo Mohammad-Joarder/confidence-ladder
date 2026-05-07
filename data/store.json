@@ -15,6 +15,36 @@
       "status": "pending",
       "markedLiveClarification": false,
       "aiImprovedBody": "Give me the details\n\nCould you share which topic or example this relates to, and where you got stuck?"
+    },
+    {
+      "id": "6d0b4c46-04db-4010-b782-73a435022b06",
+      "title": "I have issue with derivatives",
+      "body": "I have issue with derivatives",
+      "anonymous": true,
+      "tags": [],
+      "createdAt": "2026-05-07T14:12:16.181Z",
+      "updatedAt": "2026-05-07T14:12:16.181Z",
+      "upvotes": 0,
+      "upvoteFingerprints": [],
+      "status": "pending",
+      "markedLiveClarification": false,
+      "aiImprovedBody": "I have issue with derivatives"
+    },
+    {
+      "id": "5cb84582-6d75-4157-8f41-dd1f4902018d",
+      "title": "I have issue with vector",
+      "body": "I do not understand infinite vector",
+      "anonymous": false,
+      "authorDisplay": "Rajib",
+      "tags": [
+        "Vector"
+      ],
+      "createdAt": "2026-05-07T14:22:52.019Z",
+      "updatedAt": "2026-05-07T14:22:52.019Z",
+      "upvotes": 0,
+      "upvoteFingerprints": [],
+      "status": "pending",
+      "markedLiveClarification": false
     }
   ],
   "answers": [],
@@ -50,13 +80,37 @@
   ],
   "participation": {
     "57388fc9e81bd9d53598e81d0fe36300": {
-      "stage": "anonymous",
-      "pageViews": 5,
-      "questionsAsked": 1,
+      "stage": "named",
+      "pageViews": 8,
+      "questionsAsked": 3,
       "upvotesGiven": 0,
       "pollVotes": 1,
-      "updatedAt": "2026-05-06T14:17:59.261Z",
+      "updatedAt": "2026-05-07T14:22:52.046Z",
       "recentEvents": [
+        {
+          "kind": "question_asked",
+          "at": "2026-05-07T14:22:52.046Z"
+        },
+        {
+          "kind": "page_view",
+          "at": "2026-05-07T14:21:32.207Z"
+        },
+        {
+          "kind": "question_asked",
+          "at": "2026-05-07T14:12:16.404Z"
+        },
+        {
+          "kind": "page_view",
+          "at": "2026-05-07T14:10:24.529Z"
+        },
+        {
+          "kind": "nickname_set",
+          "at": "2026-05-07T14:05:18.299Z"
+        },
+        {
+          "kind": "page_view",
+          "at": "2026-05-07T14:04:43.180Z"
+        },
         {
           "kind": "question_asked",
           "at": "2026-05-06T14:17:59.261Z"
@@ -86,8 +140,9 @@
           "at": "2026-05-06T14:02:16.351Z"
         }
       ],
-      "lastViewAt": "2026-05-06T14:08:50.777Z",
-      "lastNudgeAt": "2026-05-06T14:03:33.930Z"
+      "lastViewAt": "2026-05-07T14:21:32.207Z",
+      "lastNudgeAt": "2026-05-06T14:03:33.930Z",
+      "nickname": "rajib"
     }
   }
 }

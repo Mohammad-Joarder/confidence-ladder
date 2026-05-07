@@ -24,7 +24,6 @@ export async function POST(req: Request) {
       anonymous?: boolean;
       authorDisplay?: string;
       tags?: string[];
-      useAiImprovement?: boolean;
       clientToken?: string;
     };
 
@@ -42,14 +41,6 @@ export async function POST(req: Request) {
       : [];
 
     const now = new Date().toISOString();
-    let aiImprovedBody: string | undefined;
-
-    if (body.useAiImprovement) {
-      const { rewriteQuestion } = await import("@/lib/ai");
-      const improved = await rewriteQuestion(title, text);
-      aiImprovedBody = improved.improvedBody;
-    }
-
     const q: Question = {
       id: newId(),
       title,
@@ -63,7 +54,6 @@ export async function POST(req: Request) {
       upvoteFingerprints: [],
       status: "pending",
       markedLiveClarification: false,
-      aiImprovedBody,
     };
 
     const clientToken = typeof body.clientToken === "string" ? body.clientToken : undefined;

@@ -35,45 +35,6 @@ export async function POST(req: Request) {
       reply += `\n\nFrom past answers:\n- ${snippets.join("\n- ")}`;
     }
 
-    const key = process.env.OPENAI_API_KEY;
-    if (key && ranked.length > 0) {
-      try {
-        const ctx = ranked
-          .slice(0, 4)
-          .map(({ q }) => `- ${q.title}: ${q.body.slice(0, 160)}`)
-          .join("\n");
-        const res = await fetch("https://api.openai.com/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${key}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: process.env.OPENAI_MODEL ?? "gpt-4o-mini",
-            messages: [
-              {
-                role: "system",
-                content:
-                  "You help shy students. Be brief and warm. Suggest they ask on the board if unsure. Use only the provided board excerpts.",
-              },
-              {
-                role: "user",
-                content: `Student message:\n${msg}\n\nBoard excerpts:\n${ctx}\n\nReply in under 120 words.`,
-              },
-            ],
-            temperature: 0.5,
-          }),
-        });
-        if (res.ok) {
-          const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
-          const text = data.choices?.[0]?.message?.content?.trim();
-          if (text) reply = text;
-        }
-      } catch {
-        // keep heuristic reply
-      }
-    }
-
     return NextResponse.json({
       reply,
       links: ranked.slice(0, 5).map(({ q }) => ({ id: q.id, title: q.title })),

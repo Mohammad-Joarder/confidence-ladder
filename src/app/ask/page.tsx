@@ -12,19 +12,7 @@ export default function AskPage() {
   const [anonymous, setAnonymous] = useState(true);
   const [authorDisplay, setAuthorDisplay] = useState("");
   const [tags, setTags] = useState("");
-  const [useAi, setUseAi] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [preview, setPreview] = useState<string | null>(null);
-
-  async function improve() {
-    const res = await fetch("/api/ai/rewrite", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, body }),
-    });
-    const d = await res.json();
-    if (d.improvedBody) setPreview(d.improvedBody);
-  }
 
   async function submit() {
     setBusy(true);
@@ -42,7 +30,6 @@ export default function AskPage() {
           anonymous,
           authorDisplay: anonymous ? undefined : authorDisplay,
           tags: tagList,
-          useAiImprovement: useAi,
           clientToken: getClientToken(),
         }),
       });
@@ -112,26 +99,7 @@ export default function AskPage() {
           />
         </label>
 
-        <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
-          <input type="checkbox" checked={useAi} onChange={(e) => setUseAi(e.target.checked)} />
-          AI-assisted clarity pass on submit (OpenAI when configured; heuristic fallback otherwise)
-        </label>
-
-        {preview && (
-          <div className="rounded-xl bg-slate-50 p-3 text-sm dark:bg-slate-800">
-            <p className="font-medium text-slate-800 dark:text-slate-100">Suggested clearer wording</p>
-            <p className="mt-2 whitespace-pre-wrap text-slate-700 dark:text-slate-300">{preview}</p>
-          </div>
-        )}
-
         <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold dark:border-slate-600"
-            onClick={() => void improve()}
-          >
-            Preview rewrite
-          </button>
           <button
             type="button"
             disabled={busy || !title.trim() || !body.trim()}

@@ -14,9 +14,11 @@ Students / Teachers
    └── Cron-triggered cleanup (/api/cron/cleanup)
 
 Persistence (single JSON file — no blob/database SDK)
-   └── Default: `data/store.json` next to the app (override with env `STORE_JSON_PATH`)
+  └── Default: `data/store.json` next to the app (override with env `STORE_JSON_PATH`)
+      Writes are serialized and saved atomically (`.tmp` -> rename) for better integrity at low scale.
 
-Serverless note: platforms like Netlify/Vercel lambdas often **cannot persist** this file across requests/deploys. Run **`npm run start`** (or Docker) on a host with a **writable disk** or mounted volume for production.
+Serverless note: Netlify/Vercel lambdas often **cannot persist** this file across requests/deploys.
+For production, run **`npm run start`** (or Docker) on a host with a **writable persistent disk**.
 
 ## File layout
 
@@ -37,12 +39,11 @@ src/
       participation POST views / nickname (confidence ladder)
       nudge GET passive-user banner payload
       chat POST assistant + similarity-ranked FAQ excerpts
-      ai/rewrite POST clarity rewrite (optional OpenAI)
       cron/cleanup GET (cron secret header)
   components/AppShell.tsx, ChatAssistant.tsx
   lib/
     types.ts, store.ts, display.ts
-    similarity.ts, ai.ts, participation.ts
+    similarity.ts, participation.ts
     retention.ts, teacher-auth.ts, crypto-util.ts
 data/store.json              # Dev seed / git-safe empty schema
 vercel.json                  # Cron schedule
@@ -53,7 +54,7 @@ vercel.json                  # Cron schedule
 | Method & path | Who | Purpose |
 |---------------|-----|---------|
 | GET `/api/questions` | Public | Board payload (+ similarity counts) |
-| POST `/api/questions` | Public | Create question (`anonymous`, tags, optional AI improve, optional `clientToken`) |
+| POST `/api/questions` | Public | Create question (`anonymous`, tags, optional `clientToken`) |
 | GET `/api/questions/[id]` | Public | Detail + answers + similar IDs |
 | POST `/api/questions/[id]/upvote` | Public | Idempotent upvote (`clientToken`) |
 | PATCH `/api/questions/[id]` | Teacher secret | Toggle live clarification flag |
@@ -63,8 +64,7 @@ vercel.json                  # Cron schedule
 | POST `/api/polls/[id]/vote` | Public | Anonymous vote fingerprint |
 | POST `/api/participation` | Public | Page views / nickname / ladder bumps |
 | GET `/api/nudge` | Public | Passive-reader heuristic |
-| POST `/api/chat` | Public | Assistant (+ optional OpenAI) |
-| POST `/api/ai/rewrite` | Public | Pre-submit clarity rewrite |
+| POST `/api/chat` | Public | Search-based assistant from similar board questions |
 | GET `/api/cron/cleanup` | Cron (`Bearer CRON_SECRET`) | Deletes entities older than 30 days |
 
 Teacher authorization header: `x-teacher-secret: $TEACHER_SECRET`.
@@ -118,7 +118,7 @@ Board                Ask                         Question detail
 │ Ask [btn]       │  │ Title [__________]     │  │ Status · Anonymous    │
 │ [card] pending  │  │ Body  [textarea]       │  │ Title                 │
 │ tags · ↑3 · sim │  │ [x] anonymous          │  │ Body                  │
-└─────────────────┘  │ Tags … AI clarify [x]  │  │ [Upvote]              │
+└─────────────────┘  │ Tags …                 │  │ [Upvote]              │
                      │ [ Preview ] [ Post ]   │  │ Answers list…          │
                      └────────────────────────┘  │ Similar threads        │
                                                  └────────────────────────┘
@@ -138,14 +138,20 @@ Teacher drawer                     Floating Assistant (all pages)
 5. **Day 6**: Deploy to a Node host with persistent disk + cron secret wiring + smoke QA mobile.
 6. **Week 2 (nice-to-have)**: Teacher UX polish (pick question from board without copying IDs), rate limiting headers, optimistic concurrency on Blob uploads (`ifMatch`).
 
-## Deploy (persistent JSON file)
+## Deploy (easy + consistent for <=30 users)
 
-Use any Node host where **`data/store.json` stays writable** (VPS, Railway/Fly/Render with disk, Docker volume). Flow:
+Recommended: **Render Web Service + persistent disk**.
 
-1. `npm install` → `npm run build` → `npm run start` (set `PORT` if needed).
-2. **Environment variables**: `.env.example` (`TEACHER_SECRET`, `DATA_SECRET`, `CRON_SECRET`, optional OpenAI).
-3. Optionally **`STORE_JSON_PATH`** if you must put the file somewhere else (e.g. `/tmp/...` on restrictive serverless — data may not survive restarts).
-4. **Cron**: hit `GET /api/cron/cleanup` with header `Authorization: Bearer CRON_SECRET` on a schedule (see `vercel.json` for an example schedule if you use Vercel Cron).
+1. Create a Render Web Service from this repo.
+2. Set root directory to `confidence-ladder`.
+3. Build command: `npm install && npm run build`
+4. Start command: `npm run start`
+5. Add a persistent disk (example mount path: `/var/data/confidence-ladder`).
+6. Set environment variable `STORE_JSON_PATH=/var/data/confidence-ladder/store.json`.
+7. Add environment variables from `.env.example` (`TEACHER_SECRET`, `DATA_SECRET`, `CRON_SECRET`).
+8. Set a Render cron job to call `GET /api/cron/cleanup` daily with header `Authorization: Bearer <CRON_SECRET>`.
+
+Alternative hosts: Railway, Fly.io, or any VPS/container host with a mounted writable volume.
 
 Local development:
 
