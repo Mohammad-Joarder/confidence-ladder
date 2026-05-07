@@ -1,7 +1,8 @@
-import DOMPurify from "isomorphic-dompurify";
+import sanitizeHtml from "sanitize-html";
 
-const SANITIZE_RICH = {
-  ALLOWED_TAGS: [
+/** Pure-Node HTML sanitization (no JSDOM) — reliable on Vercel serverless. */
+const OPTIONS: sanitizeHtml.IOptions = {
+  allowedTags: [
     "p",
     "br",
     "strong",
@@ -28,17 +29,27 @@ const SANITIZE_RICH = {
     "div",
     "span",
   ],
-  ALLOWED_ATTR: ["href", "target", "rel", "src", "alt", "title", "class", "style"],
-  ALLOW_DATA_ATTR: false,
-} as const;
+  allowedAttributes: {
+    a: ["href", "target", "rel", "class", "style"],
+    img: ["src", "alt", "title", "class"],
+    // TipTap / alignment
+    "*": ["class", "style"],
+  },
+  allowedSchemes: ["http", "https", "mailto", "data"],
+  allowedSchemesByTag: {
+    img: ["http", "https", "data"],
+    a: ["http", "https", "mailto"],
+  },
+  allowedStyles: {
+    "*": {
+      "text-align": [/^left$/, /^right$/, /^center$/, /^justify$/],
+    },
+  },
+};
 
 /** Server-safe HTML for stored rich text (questions, answers). */
 export function sanitizeRichHtml(dirty: string): string {
   const trimmed = (dirty ?? "").trim();
   if (!trimmed) return "";
-  return DOMPurify.sanitize(trimmed, {
-    ALLOWED_TAGS: [...SANITIZE_RICH.ALLOWED_TAGS],
-    ALLOWED_ATTR: [...SANITIZE_RICH.ALLOWED_ATTR],
-    ALLOW_DATA_ATTR: SANITIZE_RICH.ALLOW_DATA_ATTR,
-  });
+  return sanitizeHtml(trimmed, OPTIONS);
 }
