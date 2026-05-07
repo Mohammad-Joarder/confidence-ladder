@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { newId, participationKey } from "@/lib/crypto-util";
+import { isRichTextEmpty } from "@/lib/html-plain";
 import { bumpParticipation } from "@/lib/participation";
+import { sanitizeRichHtml } from "@/lib/sanitize-html";
 import { similarQuestionCount } from "@/lib/similarity";
 import { mutateStore, loadStore } from "@/lib/store";
 import type { Question } from "@/lib/types";
@@ -28,8 +30,9 @@ export async function POST(req: Request) {
     };
 
     const title = (body.title ?? "").trim();
-    const text = (body.body ?? "").trim();
-    if (!title || !text) {
+    const rawBody = (body.body ?? "").trim();
+    const text = sanitizeRichHtml(rawBody);
+    if (!title || isRichTextEmpty(text)) {
       return NextResponse.json({ error: "Title and question text are required." }, { status: 400 });
     }
 

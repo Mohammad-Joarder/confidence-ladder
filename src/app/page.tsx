@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { StatusLegend } from "@/components/StatusLegend";
 import { publicQuestion } from "@/lib/display";
+import { htmlToPlainText } from "@/lib/html-plain";
 import { similarQuestionCount } from "@/lib/similarity";
 import { loadStore } from "@/lib/store";
 
@@ -105,7 +106,9 @@ export default async function BoardPage() {
                 {similarCount > 0 && <span className="text-slate-400">· {similarCount} similar</span>}
               </div>
               <h2 className="mt-2 font-medium text-slate-900 dark:text-white">{q.title}</h2>
-              <p className="mt-1 line-clamp-2 text-sm text-slate-600 dark:text-slate-400">{q.body}</p>
+              <p className="mt-1 line-clamp-2 text-sm text-slate-600 dark:text-slate-400">
+                {htmlToPlainText(q.body)}
+              </p>
               {q.tags.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1">
                   {q.tags.map((t) => (

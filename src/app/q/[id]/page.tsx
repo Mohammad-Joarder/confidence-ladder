@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { RichHtml } from "@/components/RichHtml";
 import { StatusLegend } from "@/components/StatusLegend";
 import { publicQuestion } from "@/lib/display";
+import { isRichTextEmpty } from "@/lib/html-plain";
 import { similarityScore } from "@/lib/similarity";
 import { loadStore } from "@/lib/store";
 import { QuestionActions } from "./question-actions";
@@ -54,11 +56,19 @@ export default async function QuestionPage({ params }: { params: Promise<{ id: s
           <span className="text-slate-400">↑ {q.upvotes}</span>
         </div>
         <h1 className="mt-3 text-2xl font-semibold text-slate-900 dark:text-white">{q.title}</h1>
-        <p className="mt-3 whitespace-pre-wrap text-slate-700 dark:text-slate-300">{q.body}</p>
+        <div className="mt-3 text-slate-700 dark:text-slate-300">
+          {isRichTextEmpty(q.body) ? (
+            <p className="text-slate-500 italic">No details.</p>
+          ) : (
+            <RichHtml html={q.body} />
+          )}
+        </div>
         {q.aiImprovedBody && (
           <div className="mt-4 rounded-xl bg-slate-50 p-3 text-sm dark:bg-slate-800">
             <p className="font-medium text-slate-800 dark:text-slate-100">AI clarity suggestion</p>
-            <p className="mt-1 whitespace-pre-wrap text-slate-700 dark:text-slate-300">{q.aiImprovedBody}</p>
+            <div className="mt-1 text-slate-700 dark:text-slate-300">
+              <RichHtml html={q.aiImprovedBody} />
+            </div>
           </div>
         )}
         {q.tags.length > 0 && (
@@ -82,7 +92,9 @@ export default async function QuestionPage({ params }: { params: Promise<{ id: s
           <ul className="space-y-3">
             {answers.map((a) => (
               <li key={a.id} className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-                <p className="whitespace-pre-wrap text-slate-800 dark:text-slate-100">{a.body}</p>
+                <div className="text-slate-800 dark:text-slate-100">
+                  <RichHtml html={a.body} />
+                </div>
                 <p className="mt-2 text-xs text-slate-400">{new Date(a.createdAt).toLocaleString()}</p>
               </li>
             ))}

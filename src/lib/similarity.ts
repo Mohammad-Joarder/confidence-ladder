@@ -1,5 +1,7 @@
+import { htmlToPlainText } from "./html-plain";
+
 function tokens(text: string): Set<string> {
-  const cleaned = text
+  const cleaned = htmlToPlainText(text)
     .toLowerCase()
     .replace(/[^a-z0-9\s]/g, " ")
     .split(/\s+/)

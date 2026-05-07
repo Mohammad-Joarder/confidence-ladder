@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { RichTextEditor } from "@/components/RichTextEditor";
 import { SessionDatePicker } from "@/components/SessionDatePicker";
 import { StatusLegend } from "@/components/StatusLegend";
+import { isRichTextEmpty } from "@/lib/html-plain";
 import {
   combineDateAndTimeToIso,
   formatLocalDateLabel,
@@ -33,6 +35,7 @@ export default function TeacherPage() {
   const [questions, setQuestions] = useState<QuestionLite[]>([]);
   const [questionId, setQuestionId] = useState("");
   const [answerBody, setAnswerBody] = useState("");
+  const [answerEditorKey, setAnswerEditorKey] = useState(0);
   const [live, setLive] = useState(false);
 
   const [sessionTopic, setSessionTopic] = useState("");
@@ -278,6 +281,7 @@ export default function TeacherPage() {
 
     showNotice("Answer posted successfully.", "success");
     setAnswerBody("");
+    setAnswerEditorKey((k) => k + 1);
     await refreshQuestions();
   }
 
@@ -512,14 +516,21 @@ export default function TeacherPage() {
           <p className="mt-2 text-xs text-slate-500">Selected: {selectedQuestion.title}</p>
         )}
 
-        <label className="mt-3 block text-sm">
-          Answer
-          <textarea
-            className="mt-1 min-h-[110px] w-full rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-700 dark:bg-slate-950"
-            value={answerBody}
-            onChange={(e) => setAnswerBody(e.target.value)}
-          />
-        </label>
+        <div className="mt-3 block text-sm">
+          <span className="block font-medium text-slate-900 dark:text-slate-100">Answer</span>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            Rich text and pasted images supported (same as student questions).
+          </p>
+          <div className="mt-2">
+            <RichTextEditor
+              editorKey={answerEditorKey}
+              initialHtml={answerBody}
+              onChange={setAnswerBody}
+              disabled={!unlocked}
+              placeholder="Write the official answer… Paste images if helpful."
+            />
+          </div>
+        </div>
         <label className="mt-3 flex items-center gap-2 text-sm">
           <input type="checkbox" checked={live} onChange={(e) => setLive(e.target.checked)} />
           Mark for live clarification session
@@ -527,7 +538,7 @@ export default function TeacherPage() {
         <div className="mt-4 flex flex-wrap gap-2">
           <button
             type="button"
-            disabled={!unlocked || !questionId.trim() || !answerBody.trim()}
+            disabled={!unlocked || !questionId.trim() || isRichTextEmpty(answerBody)}
             className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40"
             onClick={() => void postAnswer()}
           >

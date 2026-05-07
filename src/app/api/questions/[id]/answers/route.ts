@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { newId } from "@/lib/crypto-util";
+import { isRichTextEmpty } from "@/lib/html-plain";
+import { sanitizeRichHtml } from "@/lib/sanitize-html";
 import { mutateStore } from "@/lib/store";
 import type { Answer } from "@/lib/types";
 import { assertTeacher } from "@/lib/teacher-auth";
@@ -11,8 +13,9 @@ export async function POST(req: Request, ctx: { params: Promise<{ id: string }> 
   const { id } = await ctx.params;
   try {
     const body = (await req.json()) as { body?: string };
-    const text = (body.body ?? "").trim();
-    if (!text) return NextResponse.json({ error: "Answer text required." }, { status: 400 });
+    const raw = (body.body ?? "").trim();
+    const text = sanitizeRichHtml(raw);
+    if (isRichTextEmpty(text)) return NextResponse.json({ error: "Answer text required." }, { status: 400 });
 
     const now = new Date().toISOString();
     const answer: Answer = {

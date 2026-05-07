@@ -3,7 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { RichTextEditor } from "@/components/RichTextEditor";
 import { getClientToken } from "@/lib/client-token";
+import { isRichTextEmpty } from "@/lib/html-plain";
 
 export default function AskPage() {
   const router = useRouter();
@@ -63,15 +65,15 @@ export default function AskPage() {
           />
         </label>
 
-        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-          Details
-          <textarea
-            className="mt-1 min-h-[120px] w-full rounded-xl border border-slate-200 px-3 py-2 text-base dark:border-slate-700 dark:bg-slate-950"
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder="Where did you get stuck?"
-          />
-        </label>
+        <div className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+          <span className="block">Details</span>
+          <p className="mt-1 text-xs font-normal text-slate-500 dark:text-slate-400">
+            Formatting, links, and pasted images (embedded) are supported.
+          </p>
+          <div className="mt-2">
+            <RichTextEditor initialHtml={body} onChange={setBody} />
+          </div>
+        </div>
 
         <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
           <input type="checkbox" checked={anonymous} onChange={(e) => setAnonymous(e.target.checked)} />
@@ -102,7 +104,7 @@ export default function AskPage() {
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            disabled={busy || !title.trim() || !body.trim()}
+            disabled={busy || !title.trim() || isRichTextEmpty(body)}
             className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
             onClick={() => void submit()}
           >

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { htmlToPlainText } from "@/lib/html-plain";
 import { similarityScore } from "@/lib/similarity";
 import { loadStore } from "@/lib/store";
 
@@ -23,7 +24,10 @@ export async function POST(req: Request) {
     const snippets: string[] = [];
     for (const { q } of answered.slice(0, 2)) {
       const ans = store.answers.find((a) => a.questionId === q.id);
-      if (ans) snippets.push(`Related Q: "${q.title}" → ${ans.body.slice(0, 220)}${ans.body.length > 220 ? "…" : ""}`);
+      if (ans) {
+        const plain = htmlToPlainText(ans.body);
+        snippets.push(`Related Q: "${q.title}" → ${plain.slice(0, 220)}${plain.length > 220 ? "…" : ""}`);
+      }
     }
 
     let reply =
